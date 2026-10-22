@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin - RapidFood</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-logo">
+        <i class="ti ti-motorbike"></i>
+        RapidFood Admin
+    </div>
+    <div class="navbar-actions">
+        <a href="/admin" class="nav-link" style="color:#f97316;">Pedidos</a>
+        <a href="/admin/productos" class="nav-link">Productos</a>
+        <a href="/admin/repartidores" class="nav-link">Repartidores</a>
+        <a href="/admin/resenas" class="nav-link">Reseñas</a>
+        <a href="/logout" class="cart-btn" style="background:#ef4444;">
+            <i class="ti ti-logout"></i> Salir
+        </a>
+    </div>
+</nav>
+
+<main class="container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- TARJETAS DE GANANCIAS -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:1rem; margin-bottom:1.5rem;">
+
+        <div style="background:#1a1a2e; border-radius:12px; padding:1.2rem;">
+            <div style="font-size:12px; color:#999; margin-bottom:4px;">Ganancias hoy</div>
+            <div style="font-size:26px; font-weight:700; color:#f97316;">Bs. {{ "%.2f"|format(ganancia_hoy) }}</div>
+            <div style="font-size:12px; color:#666; margin-top:4px;">{{ pedidos_hoy }} pedidos hoy</div>
+        </div>
+
+        <div style="background:#fff; border-radius:12px; padding:1.2rem; border:1px solid #eee;">
+            <div style="font-size:12px; color:#999; margin-bottom:4px;">Esta semana</div>
+            <div style="font-size:26px; font-weight:700; color:#1a1a2e;">Bs. {{ "%.2f"|format(ganancia_semana) }}</div>
+            <div style="font-size:12px; color:#666; margin-top:4px;">Últimos 7 días</div>
+        </div>
+
+        <div style="background:#fff; border-radius:12px; padding:1.2rem; border:1px solid #eee;">
+            <div style="font-size:12px; color:#999; margin-bottom:4px;">Este mes</div>
+            <div style="font-size:26px; font-weight:700; color:#1a1a2e;">Bs. {{ "%.2f"|format(ganancia_mes) }}</div>
+            <div style="font-size:12px; color:#666; margin-top:4px;">Mes actual</div>
+        </div>
+
+        <div style="background:#fff; border-radius:12px; padding:1.2rem; border:1px solid #eee;">
+            <div style="font-size:12px; color:#999; margin-bottom:4px;">Estado pedidos</div>
+            <div style="display:flex; flex-direction:column; gap:4px; margin-top:8px;">
+                <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span>🕐 Pendientes</span>
+                    <span style="font-weight:600;">{{ pedidos|selectattr('estado','equalto','pendiente')|list|length }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span>👨‍🍳 Preparando</span>
+                    <span style="font-weight:600;">{{ pedidos|selectattr('estado','equalto','preparando')|list|length }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span>🛵 En camino</span>
+                    <span style="font-weight:600;">{{ pedidos|selectattr('estado','equalto','en_camino')|list|length }}</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- GRÁFICA Y PRODUCTOS TOP -->
+    <div style="display:grid; grid-template-columns:2fr 1fr; gap:1rem; margin-bottom:1.5rem;">
+
+        <!-- GRÁFICA SEMANA -->
+        <div style="background:#fff; border-radius:12px; border:1px solid #eee; padding:1.5rem;">
+            <h3 style="font-size:15px; margin-bottom:1rem;">Ganancias últimos 7 días</h3>
+            <canvas id="chartSemana" height="120"></canvas>
+        </div>
+
+        <!-- PRODUCTOS TOP -->
+        <div style="background:#fff; border-radius:12px; border:1px solid #eee; padding:1.5rem;">
+            <h3 style="font-size:15px; margin-bottom:1rem;">Más vendidos</h3>
+            {% if productos_top %}
+                {% for p in productos_top %}
+                <div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:0.5px solid #eee;">
+                    <span style="font-size:20px;">{{ p.imagen_emoji or '🍽️' }}</span>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:600;">{{ p.nombre }}</div>
+                        <div style="height:6px; background:#eee; border-radius:4px; margin-top:4px;">
+                            <div style="height:6px; background:#f97316; border-radius:4px; width:{{ [(p.total_vendido / productos_top[0].total_vendido * 100)|int, 100]|min }}%;"></div>
+                        </div>
+                    </div>
+                    <span style="font-size:13px; font-weight:700; color:#f97316;">{{ p.total_vendido }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="font-size:13px; color:#999;">Sin ventas aún</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- FILTROS PEDIDOS -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
+        <h2>Pedidos del {{ fecha_sel.strftime('%d/%m/%Y') }}</h2>
+        <form method="GET" action="/admin" style="display:flex; gap:8px; align-items:center;">
+            <input type="date" name="fecha" value="{{ fecha_sel }}"
+                style="padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; outline:none;">
+            <button type="submit" class="btn-primary" style="padding:8px 16px;">
+                <i class="ti ti-search"></i> Buscar
+            </button>
+            <a href="/admin" class="btn-primary" style="padding:8px 16px; background:#1a1a2e;">
+                Hoy
+            </a>
+        </form>
+    </div>
+
+    <div class="categories" style="margin-bottom:1.5rem;">
+        <button class="cat-btn active" onclick="filtrarPedidos('todos', this)">
+            <i class="ti ti-list"></i> Todos
+        </button>
+        <button class="cat-btn" onclick="filtrarPedidos('pendiente', this)">🕐 Pendientes</button>
+        <button class="cat-btn" onclick="filtrarPedidos('preparando', this)">👨‍🍳 Preparando</button>
+        <button class="cat-btn" onclick="filtrarPedidos('en_camino', this)">🛵 En camino</button>
+        <button class="cat-btn" onclick="filtrarPedidos('entregado', this)">✅ Entregados</button>
+        <button class="cat-btn" onclick="filtrarPedidos('cancelado', this)">❌ Cancelados</button>
+    </div>
+
+    {% if pedidos %}
+    <div class="admin-grid">
+        {% for pedido in pedidos %}
+        <div class="pedido-card estado-card-{{ pedido.estado }}" data-estado="{{ pedido.estado }}">
+
+            <div class="pedido-header">
+                <span class="pedido-id">#{{ pedido.id }}</span>
+                <span class="estado-badge {{ pedido.estado }}">
+                    {% if pedido.estado == 'pendiente' %}🕐 Pendiente
+                    {% elif pedido.estado == 'preparando' %}👨‍🍳 Preparando
+                    {% elif pedido.estado == 'en_camino' %}🛵 En camino
+                    {% elif pedido.estado == 'entregado' %}✅ Entregado
+                    {% elif pedido.estado == 'cancelado' %}❌ Cancelado
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="pedido-info">
+                <p><i class="ti ti-user"></i> {{ pedido.cliente_nombre }}</p>
+                <p><i class="ti ti-phone"></i> {{ pedido.cliente_telefono or 'Sin teléfono' }}</p>
+                <p><i class="ti ti-map-pin"></i> {{ pedido.direccion }}</p>
+                <p><i class="ti ti-clock"></i> {{ pedido.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                {% if pedido.repartidor %}
+                <p><i class="ti ti-motorbike"></i> {{ pedido.repartidor.nombre }}</p>
+                {% endif %}
+            </div>
+
+            <div class="pedido-items">
+                {% for item in pedido.items %}
+                <div class="pedido-item-linea">
+                    <span>{{ item.producto.nombre }} x{{ item.cantidad }}</span>
+                    <span>Bs. {{ "%.2f"|format(item.precio_unit * item.cantidad) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="pedido-total">
+                <span>Total</span>
+                <span>Bs. {{ pedido.total }}</span>
+            </div>
+
+            <form method="POST" action="/admin/pedido/{{ pedido.id }}" style="margin-top:1rem;">
+                <select name="estado" class="select-estado">
+                    <option value="pendiente"  {% if pedido.estado=='pendiente'  %}selected{% endif %}>🕐 Pendiente</option>
+                    <option value="preparando" {% if pedido.estado=='preparando' %}selected{% endif %}>👨‍🍳 Preparando</option>
+                    <option value="en_camino"  {% if pedido.estado=='en_camino'  %}selected{% endif %}>🛵 En camino</option>
+                    <option value="entregado"  {% if pedido.estado=='entregado'  %}selected{% endif %}>✅ Entregado</option>
+                    <option value="cancelado"  {% if pedido.estado=='cancelado'  %}selected{% endif %}>❌ Cancelado</option>
+                </select>
+                <button type="submit" class="btn-actualizar">
+                    <i class="ti ti-refresh"></i> Actualizar
+                </button>
+            </form>
+
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-cart">
+        <i class="ti ti-clipboard-off"></i>
+        <p>No hay pedidos aún</p>
+    </div>
+    {% endif %}
+
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+function filtrarPedidos(estado, btn) {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.pedido-card').forEach(card => {
+        if (estado === 'todos' || card.dataset.estado === estado) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Gráfica de semana
+const ctx = document.getElementById('chartSemana').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: {{ pedidos_semana|map(attribute='dia')|list|tojson }},
+        datasets: [{
+            label: 'Ganancias (Bs.)',
+            data:  {{ pedidos_semana|map(attribute='total')|list|tojson }},
+            backgroundColor: '#f97316',
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+</script>
+</body>
+</html>

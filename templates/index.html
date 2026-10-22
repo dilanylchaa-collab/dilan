@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidFood</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-logo">
+        <i class="ti ti-motorbike"></i>
+        RapidFood
+    </div>
+    <div class="navbar-actions">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/menu" class="nav-link">Menú</a>
+        <a href="/seguimiento" class="nav-link">Rastrear</a>
+        {% if session.get('cliente_id') %}
+        <a href="/cliente/logout" class="nav-link">
+            <i class="ti ti-user"></i> Salir
+        </a>
+        {% else %}
+        <a href="/cliente/login" class="nav-link">
+            <i class="ti ti-user"></i> Entrar
+        </a>
+        {% endif %}
+        <a href="/carrito" class="cart-btn">
+            <i class="ti ti-shopping-cart"></i>
+            Mi pedido
+            <span class="cart-badge" id="cart-count">0</span>
+        </a>
+    </div>
+</nav>
+
+<main class="container">
+    <section class="hero">
+        <div class="hero-text">
+            <h1>¿Tienes hambre? <br><span>Nosotros te lo llevamos</span></h1>
+            <p>Comida rápida, fresca y deliciosa directo a tu puerta</p>
+            <a href="/menu" class="btn-primary">
+                <i class="ti ti-arrow-right"></i> Ver menú
+            </a>
+        </div>
+        <div class="hero-emoji">🛵</div>
+    </section>
+
+    <section class="features">
+        <div class="feature-card">
+            <i class="ti ti-clock"></i>
+            <h3>Entrega rápida</h3>
+            <p>En menos de 30 minutos en tu puerta</p>
+        </div>
+        <div class="feature-card">
+            <i class="ti ti-star"></i>
+            <h3>Alta calidad</h3>
+            <p>Ingredientes frescos seleccionados</p>
+        </div>
+        <div class="feature-card">
+            <i class="ti ti-shield-check"></i>
+            <h3>Pago seguro</h3>
+            <p>Múltiples métodos de pago</p>
+        </div>
+    </section>
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

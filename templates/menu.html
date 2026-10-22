@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú - RapidFood</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-logo">
+        <i class="ti ti-motorbike"></i>
+        RapidFood
+    </div>
+    <div class="navbar-actions">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/menu" class="nav-link">Menú</a>
+        <a href="/seguimiento" class="nav-link">Rastrear</a>
+        {% if session.get('cliente_id') %}
+        <a href="/cliente/logout" class="nav-link">
+            <i class="ti ti-user"></i> Salir
+        </a>
+        {% else %}
+        <a href="/cliente/login" class="nav-link">
+            <i class="ti ti-user"></i> Entrar
+        </a>
+        {% endif %}
+        <a href="/carrito" class="cart-btn">
+            <i class="ti ti-shopping-cart"></i>
+            Mi pedido
+            <span class="cart-badge" id="cart-count">0</span>
+        </a>
+    </div>
+</nav>
+
+<main class="container">
+
+    <div class="menu-header">
+        <h2>Nuestro Menú</h2>
+    </div>
+
+    <div class="categories">
+        <button class="cat-btn active" onclick="filtrar('todos', this)">
+            <i class="ti ti-flame"></i> Todos
+        </button>
+        {% for cat in categorias %}
+        <button class="cat-btn" onclick="filtrar('{{ cat.id }}', this)">
+            {{ cat.icono }} {{ cat.nombre }}
+        </button>
+        {% endfor %}
+    </div>
+
+    <div class="cards-grid" id="productos-grid">
+        {% for p in productos %}
+        <div class="food-card" data-categoria="{{ p.categoria_id }}">
+            {% if p.imagen_url %}
+            <div style="width:100%; height:160px; overflow:hidden;">
+                <img src="{{ url_for('static', filename=p.imagen_url) }}"
+                    style="width:100%; height:100%; object-fit:cover; display:block;">
+            </div>
+            {% else %}
+            <div class="card-img">{{ p.imagen_emoji }}</div>
+            {% endif %}
+            <div class="card-body">
+                <div class="card-name">{{ p.nombre }}</div>
+                <div class="card-desc">{{ p.descripcion }}</div>
+                <div class="card-footer">
+                    <span class="card-price">Bs. {{ p.precio }}</span>
+                    <button class="add-btn" onclick="agregarAlCarrito({{ p.id }}, '{{ p.nombre }}', {{ p.precio }}, this)">
+                        <i class="ti ti-plus"></i> Agregar
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

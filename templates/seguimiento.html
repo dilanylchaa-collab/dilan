@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento - RapidFood</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-logo">
+        <i class="ti ti-motorbike"></i>
+        RapidFood
+    </div>
+    <div class="navbar-actions">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/menu" class="nav-link">Menú</a>
+        <a href="/seguimiento" class="nav-link" style="color:#f97316;">Rastrear</a>
+        {% if session.get('cliente_id') %}
+        <a href="/cliente/logout" class="nav-link">
+            <i class="ti ti-user"></i> Salir
+        </a>
+        {% else %}
+        <a href="/cliente/login" class="nav-link">
+            <i class="ti ti-user"></i> Entrar
+        </a>
+        {% endif %}
+        <a href="/carrito" class="cart-btn">
+            <i class="ti ti-shopping-cart"></i>
+            Mi pedido
+            <span class="cart-badge" id="cart-count">0</span>
+        </a>
+    </div>
+</nav>
+
+<main class="container">
+    <div style="max-width:650px; margin:0 auto;">
+
+        <h2 style="margin-bottom:0.5rem;">Seguimiento de pedidos</h2>
+        <p style="color:#666; margin-bottom:2rem;">Tus pedidos más recientes</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if pedidos %}
+            {% for pedido in pedidos %}
+            <div style="background:#fff; border-radius:16px; border:1px solid #eee; overflow:hidden; margin-bottom:1.5rem;">
+
+                <!-- ENCABEZADO -->
+                <div style="background:#1a1a2e; padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between;">
+                    <div>
+                        <div style="color:#999; font-size:12px;">Número de pedido</div>
+                        <div style="color:#fff; font-size:20px; font-weight:700;">#{{ pedido.id }}</div>
+                    </div>
+                    <span class="estado-badge {{ pedido.estado }}" style="font-size:13px; padding:5px 14px;">
+                        {% if pedido.estado == 'pendiente' %}🕐 Pendiente
+                        {% elif pedido.estado == 'preparando' %}👨‍🍳 Preparando
+                        {% elif pedido.estado == 'en_camino' %}🛵 En camino
+                        {% elif pedido.estado == 'entregado' %}✅ Entregado
+                        {% elif pedido.estado == 'cancelado' %}❌ Cancelado
+                        {% endif %}
+                    </span>
+                </div>
+
+                <!-- BARRA DE PROGRESO -->
+                <div style="padding:1.2rem 1.5rem;">
+                    {% set estados = ['pendiente', 'preparando', 'en_camino', 'entregado'] %}
+                    {% set paso_actual = estados.index(pedido.estado) if pedido.estado in estados else 0 %}
+                    <div style="display:flex; align-items:center;">
+                        {% for e in estados %}
+                        <div style="text-align:center; flex:1;">
+                            <div style="width:32px; height:32px; border-radius:50%; margin:0 auto 4px;
+                                background:{{ '#f97316' if loop.index0 <= paso_actual and pedido.estado != 'cancelado' else '#eee' }};
+                                display:flex; align-items:center; justify-content:center; font-size:14px;">
+                                {% if loop.index0 <= paso_actual and pedido.estado != 'cancelado' %}
+                                    {% if e == 'pendiente' %}🕐
+                                    {% elif e == 'preparando' %}👨‍🍳
+                                    {% elif e == 'en_camino' %}🛵
+                                    {% elif e == 'entregado' %}✅
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color:#ccc; font-size:12px;">○</span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size:10px; color:{{ '#f97316' if loop.index0 <= paso_actual and pedido.estado != 'cancelado' else '#ccc' }};">
+                                {% if e == 'pendiente' %}Recibido
+                                {% elif e == 'preparando' %}Preparando
+                                {% elif e == 'en_camino' %}En camino
+                                {% elif e == 'entregado' %}Entregado
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if not loop.last %}
+                        <div style="flex:1; height:2px; background:{{ '#f97316' if loop.index0 < paso_actual and pedido.estado != 'cancelado' else '#eee' }}; margin-bottom:18px;"></div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {% if pedido.estado == 'cancelado' %}
+                    <div style="background:#fee2e2; color:#991b1b; padding:10px; border-radius:8px; text-align:center; margin-top:0.8rem; font-size:13px;">
+                        ❌ Este pedido fue cancelado
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- PRODUCTOS Y TOTAL -->
+                <div style="padding:0 1.5rem 1rem; border-top:1px solid #eee;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin:0.8rem 0;">
+                        <span style="font-size:13px; color:#666;">
+                            <i class="ti ti-clock" style="color:#f97316;"></i>
+                            {{ pedido.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </span>
+                        <span style="font-size:13px; color:#666;">
+                            <i class="ti ti-user" style="color:#f97316;"></i>
+                            {{ pedido.cliente_nombre }}
+                        </span>
+                        <span style="font-size:16px; font-weight:700; color:#f97316;">
+                            Bs. {{ pedido.total }}
+                        </span>
+                    </div>
+
+                    <div style="font-size:13px; color:#888; margin-bottom:0.8rem;">
+                        {% for item in pedido.items %}
+                            {{ item.producto.nombre }} x{{ item.cantidad }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {% if pedido.estado in ['pendiente', 'preparando'] %}
+                    <form method="POST" action="/cancelar-pedido/{{ pedido.id }}"
+                        onsubmit="return confirm('¿Seguro que quieres cancelar este pedido?')">
+                        <button type="submit" style="width:100%; background:#fee2e2; color:#991b1b; border:none; border-radius:8px; padding:8px; font-size:13px; cursor:pointer; margin-bottom:0.5rem;">
+                            ❌ Cancelar pedido
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if pedido.estado == 'entregado' %}
+                        {% if pedido.resena %}
+                        <div style="display:flex; align-items:center; gap:6px; font-size:13px; background:#fffbeb; padding:8px 12px; border-radius:8px;">
+                            {% for i in range(pedido.resena[0].estrellas) %}⭐{% endfor %}
+                            <span style="color:#666; margin-left:4px;">{{ pedido.resena[0].comentario or 'Sin comentario' }}</span>
+                        </div>
+                        {% else %}
+                        <a href="/resena/{{ pedido.id }}" class="btn-primary" style="font-size:13px; padding:8px 16px; display:inline-flex;">
+                            <i class="ti ti-star"></i> Dejar reseña
+                        </a>
+                        {% endif %}
+                    {% endif %}
+
+                </div>
+
+            </div>
+            {% endfor %}
+
+        {% else %}
+            <div class="empty-cart">
+                <i class="ti ti-clipboard-off"></i>
+                <p>No hay pedidos aún</p>
+                <a href="/menu" class="btn-primary">Ver menú</a>
+            </div>
+        {% endif %}
+
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

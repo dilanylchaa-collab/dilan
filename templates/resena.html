@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dejar Reseña - RapidFood</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-logo">
+        <i class="ti ti-motorbike"></i>
+        RapidFood
+    </div>
+    <div class="navbar-actions">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/menu" class="nav-link">Menú</a>
+        <a href="/seguimiento" class="nav-link">Rastrear</a>
+        <a href="/carrito" class="cart-btn">
+            <i class="ti ti-shopping-cart"></i>
+            Mi pedido
+            <span class="cart-badge" id="cart-count">0</span>
+        </a>
+    </div>
+</nav>
+
+<main class="container">
+<div style="max-width:550px; margin:0 auto;">
+
+    <div style="text-align:center; margin-bottom:2rem;">
+        <div style="font-size:48px; margin-bottom:0.5rem;">⭐</div>
+        <h2>¿Cómo estuvo tu pedido?</h2>
+        <p style="color:#666;">Pedido #{{ pedido.id }} — {{ pedido.cliente_nombre }}</p>
+    </div>
+
+    <!-- RESUMEN DEL PEDIDO -->
+    <div style="background:#fff; border-radius:12px; border:1px solid #eee; padding:1rem 1.5rem; margin-bottom:1.5rem;">
+        {% for item in pedido.items %}
+        <div style="display:flex; justify-content:space-between; font-size:14px; padding:4px 0;">
+            <span>{{ item.producto.nombre }} x{{ item.cantidad }}</span>
+            <span style="color:#f97316; font-weight:600;">Bs. {{ "%.2f"|format(item.precio_unit * item.cantidad) }}</span>
+        </div>
+        {% endfor %}
+        <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:700; border-top:1px solid #eee; padding-top:0.8rem; margin-top:0.5rem;">
+            <span>Total</span>
+            <span style="color:#f97316;">Bs. {{ pedido.total }}</span>
+        </div>
+    </div>
+
+    <form method="POST">
+
+        <!-- ESTRELLAS -->
+        <div style="background:#fff; border-radius:12px; border:1px solid #eee; padding:1.5rem; margin-bottom:1rem; text-align:center;">
+            <p style="font-size:14px; color:#666; margin-bottom:1rem;">Califica tu experiencia</p>
+            <div class="estrellas-selector" id="estrellas-selector">
+                <span class="estrella" data-valor="1">★</span>
+                <span class="estrella" data-valor="2">★</span>
+                <span class="estrella" data-valor="3">★</span>
+                <span class="estrella" data-valor="4">★</span>
+                <span class="estrella" data-valor="5">★</span>
+            </div>
+            <input type="hidden" name="estrellas" id="estrellas-input" value="0">
+            <p id="estrellas-texto" style="font-size:13px; color:#999; margin-top:0.5rem;">Selecciona una calificación</p>
+        </div>
+
+        <!-- COMENTARIO OPCIONAL -->
+        <div style="background:#fff; border-radius:12px; border:1px solid #eee; padding:1.5rem; margin-bottom:1.5rem;">
+            <label style="font-size:14px; color:#555; display:block; margin-bottom:0.5rem;">
+                Comentario <span style="color:#999;">(opcional)</span>
+            </label>
+            <textarea name="comentario" rows="4" placeholder="Cuéntanos cómo fue tu experiencia..."
+                style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; outline:none; resize:none;"></textarea>
+        </div>
+
+        <button type="submit" class="btn-confirmar" id="btn-enviar" disabled style="opacity:0.5;">
+            <i class="ti ti-send"></i> Enviar reseña
+        </button>
+
+        <a href="/seguimiento" style="display:block; text-align:center; margin-top:1rem; font-size:14px; color:#999;">
+            Omitir reseña
+        </a>
+
+    </form>
+
+</div>
+</main>
+
+<style>
+.estrellas-selector { display:flex; justify-content:center; gap:8px; }
+.estrella {
+    font-size:40px;
+    color:#ddd;
+    cursor:pointer;
+    transition: color 0.15s, transform 0.15s;
+}
+.estrella:hover, .estrella.activa { color:#f59e0b; transform: scale(1.1); }
+</style>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+const textos = ['', 'Muy malo 😞', 'Malo 😕', 'Regular 😐', 'Bueno 😊', '¡Excelente! 🤩'];
+const estrellas = document.querySelectorAll('.estrella');
+const input     = document.getElementById('estrellas-input');
+const texto     = document.getElementById('estrellas-texto');
+const btnEnviar = document.getElementById('btn-enviar');
+
+estrellas.forEach(estrella => {
+    estrella.addEventListener('click', () => {
+        const valor = parseInt(estrella.dataset.valor);
+        input.value = valor;
+        texto.textContent = textos[valor];
+        texto.style.color = '#f59e0b';
+        btnEnviar.disabled = false;
+        btnEnviar.style.opacity = '1';
+        estrellas.forEach((e, i) => {
+            e.classList.toggle('activa', i < valor);
+        });
+    });
+
+    estrella.addEventListener('mouseover', () => {
+        const valor = parseInt(estrella.dataset.valor);
+        estrellas.forEach((e, i) => {
+            e.style.color = i < valor ? '#f59e0b' : '#ddd';
+        });
+    });
+
+    estrella.addEventListener('mouseout', () => {
+        const valorActual = parseInt(input.value);
+        estrellas.forEach((e, i) => {
+            e.style.color = i < valorActual ? '#f59e0b' : '#ddd';
+        });
+    });
+});
+</script>
+</body>
+</html>

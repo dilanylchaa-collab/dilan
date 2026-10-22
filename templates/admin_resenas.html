@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reseñas - RapidFood</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-logo">
+        <i class="ti ti-motorbike"></i>
+        RapidFood Admin
+    </div>
+    <div class="navbar-actions">
+        <a href="/admin" class="nav-link">Pedidos</a>
+        <a href="/admin/productos" class="nav-link">Productos</a>
+        <a href="/admin/resenas" class="nav-link" style="color:#f97316;">Reseñas</a>
+        <a href="/logout" class="cart-btn" style="background:#ef4444;">
+            <i class="ti ti-logout"></i> Salir
+        </a>
+    </div>
+</nav>
+
+<main class="container">
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+        <h2>Reseñas de clientes</h2>
+        <div style="background:#fff; border-radius:12px; border:1px solid #eee; padding:0.8rem 1.5rem; display:flex; align-items:center; gap:8px;">
+            <span style="font-size:20px;">⭐</span>
+            <div>
+                <div style="font-size:18px; font-weight:700; color:#f97316;">
+                    {% if resenas %}
+                        {{ "%.1f"|format(resenas|sum(attribute='estrellas') / resenas|length) }}
+                    {% else %}
+                        0.0
+                    {% endif %}
+                </div>
+                <div style="font-size:12px; color:#666;">{{ resenas|length }} reseñas</div>
+            </div>
+        </div>
+    </div>
+
+    {% if resenas %}
+    <div class="admin-grid">
+        {% for r in resenas %}
+        <div style="background:#fff; border-radius:12px; border:1px solid #eee; padding:1.2rem;">
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.8rem;">
+                <span style="font-size:14px; font-weight:600; color:#1a1a2e;">Pedido #{{ r.pedido_id }}</span>
+                <span style="font-size:12px; color:#999;">{{ r.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+            </div>
+
+            <div style="font-size:24px; margin-bottom:0.5rem;">
+                {% for i in range(5) %}
+                    {% if i < r.estrellas %}⭐{% else %}☆{% endif %}
+                {% endfor %}
+            </div>
+
+            <div style="font-size:13px; color:#555; margin-bottom:0.8rem;">
+                {{ r.pedido.cliente_nombre }} —
+                {% if r.estrellas == 1 %}Muy malo 😞
+                {% elif r.estrellas == 2 %}Malo 😕
+                {% elif r.estrellas == 3 %}Regular 😐
+                {% elif r.estrellas == 4 %}Bueno 😊
+                {% elif r.estrellas == 5 %}¡Excelente! 🤩
+                {% endif %}
+            </div>
+
+            {% if r.comentario %}
+            <div style="background:#f8f8f8; border-radius:8px; padding:10px 12px; font-size:13px; color:#444; border-left:3px solid #f97316;">
+                "{{ r.comentario }}"
+            </div>
+            {% else %}
+            <div style="font-size:13px; color:#ccc; font-style:italic;">Sin comentario</div>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-cart">
+        <i class="ti ti-star-off"></i>
+        <p>No hay reseñas aún</p>
+    </div>
+    {% endif %}
+
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

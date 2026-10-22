@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Repartidor - RapidFood</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-logo">
+        <i class="ti ti-motorbike"></i>
+        RapidFood
+    </div>
+    <div class="navbar-actions">
+        <span style="color:#fff; font-size:14px;">Hola, {{ repartidor.nombre }}</span>
+        <a href="/repartidor/logout" class="cart-btn" style="background:#ef4444;">
+            <i class="ti ti-logout"></i> Salir
+        </a>
+    </div>
+</nav>
+
+<main class="container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- ESTADO DISPONIBILIDAD -->
+    <div style="background:#fff; border-radius:12px; border:1px solid #eee; padding:1.2rem 1.5rem; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between;">
+        <div>
+            <div style="font-size:15px; font-weight:600;">Mi estado</div>
+            <div style="font-size:13px; color:#666;">Activa tu ubicación para recibir pedidos</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span id="estado-texto" style="font-size:13px; color:#666;">
+                {% if repartidor.disponible %}🟢 Disponible{% else %}🔴 No disponible{% endif %}
+            </span>
+            <button id="btn-disponible" onclick="toggleDisponible()"
+                class="btn-primary" style="padding:8px 16px; font-size:13px;">
+                {% if repartidor.disponible %}Pausar{% else %}Activar{% endif %}
+            </button>
+        </div>
+    </div>
+
+    <h2 style="margin-bottom:1rem;">Mis pedidos asignados</h2>
+
+    {% if asignaciones %}
+    <div class="admin-grid">
+        {% for a in asignaciones %}
+        <div class="pedido-card estado-card-{{ a.estado }}">
+
+            <div class="pedido-header">
+                <span class="pedido-id">Pedido #{{ a.pedido.id }}</span>
+                <span class="estado-badge {{ a.estado }}">
+                    {% if a.estado == 'pendiente' %}🕐 Pendiente
+                    {% elif a.estado == 'aceptado' %}✅ Aceptado
+                    {% elif a.estado == 'rechazado' %}❌ Rechazado
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="pedido-info">
+                <p><i class="ti ti-user"></i> {{ a.pedido.cliente_nombre }}</p>
+                <p><i class="ti ti-phone"></i> {{ a.pedido.cliente_telefono or 'Sin teléfono' }}</p>
+                <p><i class="ti ti-map-pin"></i> {{ a.pedido.direccion }}</p>
+                <p><i class="ti ti-clock"></i> {{ a.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+            </div>
+
+            <div class="pedido-items">
+                {% for item in a.pedido.items %}
+                <div class="pedido-item-linea">
+                    <span>{{ item.producto.nombre }} x{{ item.cantidad }}</span>
+                    <span>Bs. {{ "%.2f"|format(item.precio_unit * item.cantidad) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="pedido-total">
+                <span>Total</span>
+                <span>Bs. {{ a.pedido.total }}</span>
+            </div>
+
+            {% if a.estado == 'pendiente' %}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:1rem;">
+                <form method="POST" action="/repartidor/responder/{{ a.id }}">
+                    <input type="hidden" name="respuesta" value="aceptar">
+                    <button type="submit" style="width:100%; background:#16a34a; color:#fff; border:none; border-radius:8px; padding:10px; font-size:14px; cursor:pointer;">
+                        ✅ Aceptar
+                    </button>
+                </form>
+                <form method="POST" action="/repartidor/responder/{{ a.id }}">
+                    <input type="hidden" name="respuesta" value="rechazar">
+                    <button type="submit" style="width:100%; background:#ef4444; color:#fff; border:none; border-radius:8px; padding:10px; font-size:14px; cursor:pointer;">
+                        ❌ Rechazar
+                    </button>
+                </form>
+            </div>
+            {% elif a.estado == 'aceptado' and a.pedido.estado != 'entregado' %}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:1rem;">
+                <form method="POST" action="/repartidor/estado-pedido/{{ a.id }}">
+                    <input type="hidden" name="estado" value="en_camino">
+                    <button type="submit" style="width:100%; background:#8b5cf6; color:#fff; border:none; border-radius:8px; padding:10px; font-size:14px; cursor:pointer;">
+                        🛵 En camino
+                    </button>
+                </form>
+                <form method="POST" action="/repartidor/estado-pedido/{{ a.id }}">
+                    <input type="hidden" name="estado" value="entregado">
+                    <button type="submit" style="width:100%; background:#16a34a; color:#fff; border:none; border-radius:8px; padding:10px; font-size:14px; cursor:pointer;">
+                        ✅ Entregado
+                    </button>
+                </form>
+            </div>
+            {% elif a.pedido.estado == 'entregado' %}
+            <div style="background:#dcfce7; color:#166534; padding:8px 12px; border-radius:8px; text-align:center; font-size:13px; margin-top:1rem;">
+                ✅ Pedido entregado
+            </div>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-cart">
+        <i class="ti ti-package"></i>
+        <p>No tienes pedidos asignados aún</p>
+    </div>
+    {% endif %}
+
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+let disponible = {{ repartidor.disponible|lower }};
+
+function toggleDisponible() {
+    disponible = !disponible;
+
+    fetch('/repartidor/ubicacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            latitud:    null,
+            longitud:   null,
+            disponible: disponible
+        })
+    }).then(() => {
+        document.getElementById('estado-texto').textContent = disponible ? '🟢 Disponible' : '🔴 No disponible';
+        document.getElementById('btn-disponible').textContent = disponible ? 'Pausar' : 'Activar';
+    });
+
+    if (disponible && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            fetch('/repartidor/ubicacion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    latitud:    pos.coords.latitude,
+                    longitud:   pos.coords.longitude,
+                    disponible: true
+                })
+            });
+        });
+    }
+}
+
+// Actualizar ubicación cada 30 segundos solo si está disponible
+setInterval(() => {
+    if (disponible && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            fetch('/repartidor/ubicacion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    latitud:    pos.coords.latitude,
+                    longitud:   pos.coords.longitude,
+                    disponible: true
+                })
+            });
+        });
+    }
+}, 30000);
+</script>
+<audio id="notif-sonido" src="https://cdn.jsdelivr.net/gh/fregante/browser-extension-template@main/source/icon.png" preload="auto"></audio>
+
+<script>
+let pedidosPendientes = {{ asignaciones|selectattr('estado','eq','pendiente')|list|length }};
+
+setInterval(() => {
+    fetch('/repartidor/verificar-pedidos')
+        .then(r => r.json())
+        .then(data => {
+            if (data.nuevos > pedidosPendientes) {
+                pedidosPendientes = data.nuevos;
+                const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+                audio.play();
+                location.reload();
+            }
+        });
+}, 10000);
+</script>
+</body>
+</html>

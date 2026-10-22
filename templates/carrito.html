@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Pedido - RapidFood</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-logo">
+        <i class="ti ti-motorbike"></i>
+        RapidFood
+    </div>
+    <div class="navbar-actions">
+        <a href="/" class="nav-link">Inicio</a>
+        <a href="/menu" class="nav-link">Menú</a>
+        <a href="/seguimiento" class="nav-link">Rastrear</a>
+        {% if session.get('cliente_id') %}
+        <a href="/cliente/logout" class="nav-link">
+            <i class="ti ti-user"></i> Salir
+        </a>
+        {% else %}
+        <a href="/cliente/login" class="nav-link">
+            <i class="ti ti-user"></i> Entrar
+        </a>
+        {% endif %}
+        <a href="/carrito" class="cart-btn">
+            <i class="ti ti-shopping-cart"></i>
+            Mi pedido
+            <span class="cart-badge" id="cart-count">0</span>
+        </a>
+    </div>
+</nav>
+
+<main class="container">
+
+    <div class="carrito-wrapper">
+
+        <!-- LISTA DE PRODUCTOS -->
+        <div class="carrito-items">
+            <h2>Mi Pedido</h2>
+            <div id="lista-carrito"></div>
+            <div id="carrito-vacio" style="display:none;">
+                <div class="empty-cart">
+                    <i class="ti ti-shopping-cart-off"></i>
+                    <p>Tu carrito está vacío</p>
+                    <a href="/menu" class="btn-primary">Ver menú</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESUMEN Y FORMULARIO -->
+        <div class="carrito-resumen">
+            <h3>Resumen</h3>
+            <div class="resumen-detalle" id="resumen-detalle"></div>
+            <div class="resumen-total">
+                <span>Total</span>
+                <span id="total-precio">Bs. 0.00</span>
+            </div>
+
+            <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
+
+            {% if session.get('cliente_id') %}
+            <h3>Datos de entrega</h3>
+            <div class="form-group">
+                <label>Nombre completo</label>
+                <input type="text" id="nombre" placeholder="Tu nombre completo">
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="text" id="telefono" placeholder="Tu número de teléfono">
+            </div>
+            <div class="form-group">
+                <label>Dirección de entrega</label>
+                <textarea id="direccion" rows="3" placeholder="Calle, número, referencia..."></textarea>
+            </div>
+            <button class="btn-confirmar" onclick="confirmarPedido()">
+                <i class="ti ti-check"></i> Confirmar pedido
+            </button>
+            {% else %}
+            <div style="text-align:center; padding:1rem 0;">
+                <p style="font-size:14px; color:#666; margin-bottom:1rem;">Inicia sesión para confirmar tu pedido</p>
+                <a href="/cliente/login" class="btn-confirmar" style="text-decoration:none; display:flex; justify-content:center;">
+                    <i class="ti ti-login"></i> Iniciar sesión
+                </a>
+                <p style="font-size:13px; color:#999; margin-top:0.8rem;">
+                    ¿No tienes cuenta? <a href="/cliente/registro" style="color:#f97316;">Regístrate aquí</a>
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</main>
+
+<!-- MODAL ÉXITO -->
+<div class="modal-overlay" id="modal-exito" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-icon">✅</div>
+        <h3>¡Pedido confirmado!</h3>
+        <p>Tu pedido ha sido recibido y está siendo preparado.</p>
+        <p id="modal-pedido-id" style="font-weight:600; color:#f97316;"></p>
+        <a href="/menu" class="btn-primary" style="margin-top:1rem; margin-right:8px;" onclick="limpiarCarrito()">
+            Hacer otro pedido
+        </a>
+        <a id="btn-seguimiento" href="#" class="btn-primary" style="margin-top:1rem; background:#1a1a2e;">
+            <i class="ti ti-map-pin"></i> Rastrear pedido
+        </a>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
