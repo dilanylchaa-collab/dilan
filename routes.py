@@ -3,6 +3,7 @@ from models import db, Categoria, Producto, Pedido, DetallePedido, Usuario, Rese
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import mail
+from flask_mail import Message
 import cloudinary
 import cloudinary.uploader
 
@@ -50,7 +51,7 @@ def crear_pedido():
 
         # Asignar repartidor más cercano
         try:
-            repartidores = Repartidor.query.filter_by(disponible=True).all()
+            repartidores = Repartidor.query.filter_by(disponible=True, aprobado=True).all()
             if repartidores:
                 import math
 
@@ -281,9 +282,9 @@ def editar_producto(id):
     if 'imagen' in request.files:
         file = request.files['imagen']
         if file and file.filename != '' and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join('static/uploads', filename))
-            producto.imagen_url = f'uploads/{filename}'
+            resultado = cloudinary.uploader.upload(file, folder='rapidfood')
+            # imagen subida a Cloudinary
+            producto.imagen_url = resultado['secure_url']
 
     db.session.commit()
     flash('Producto actualizado correctamente', 'success')
