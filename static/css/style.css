@@ -516,3 +516,21 @@ body {
     table { font-size: 12px; }
     th, td { padding: 8px 10px; }
 }
+
+/* ── OJITO CONTRASEÑA ── */
+.pass-wrap { position: relative; }
+.pass-wrap input { padding-right: 42px; }
+.pass-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    font-size: 18px;
+    padding: 0;
+    line-height: 1;
+}
+.pass-toggle:hover { color: #f97316; }
