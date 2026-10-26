@@ -4,9 +4,9 @@ import os
 def _db_url():
     url = os.environ.get('DATABASE_URL')
     if not url:
-        return 'postgresql+pg8000://postgres:123456@localhost:5432/delivery_db'
+        return 'postgresql+psycopg2://postgres:123456@localhost:5432/delivery_db'
     url = url.replace('postgres://', 'postgresql://', 1)
-    return url.replace('postgresql://', 'postgresql+pg8000://', 1)
+    return url.replace('postgresql://', 'postgresql+psycopg2://', 1)
 
 
 class Config:
