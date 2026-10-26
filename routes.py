@@ -3,7 +3,8 @@ from models import db, Categoria, Producto, Pedido, DetallePedido, Usuario, Rese
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import mail
-from flask_mail import Message
+import cloudinary
+import cloudinary.uploader
 
 main = Blueprint('main', __name__)
 
@@ -248,9 +249,9 @@ def agregar_producto():
     if 'imagen' in request.files:
         file = request.files['imagen']
         if file and file.filename != '' and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join('static/uploads', filename))
-            imagen_url = f'uploads/{filename}'
+            resultado = cloudinary.uploader.upload(file, folder='rapidfood')
+            # imagen subida a Cloudinary
+            imagen_url = resultado['secure_url']
 
     producto = Producto(
         nombre       = nombre,
