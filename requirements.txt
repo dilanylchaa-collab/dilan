@@ -3,4 +3,5 @@ Flask-SQLAlchemy
 Flask-Login
 Flask-Mail
 pg8000
+scramp>=1.4.6
 gunicorn
