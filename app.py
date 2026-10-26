@@ -1,4 +1,5 @@
 from flask import Flask
+from sqlalchemy import text
 from config import Config
 from models import db
 from extensions import mail, login_manager
@@ -29,6 +30,9 @@ with app.app_context():
     try:
         from models import db
         db.create_all()
+        db.session.execute(text("ALTER TABLE repartidores ADD COLUMN IF NOT EXISTS aprobado BOOLEAN DEFAULT TRUE"))
+        db.session.execute(text("ALTER TABLE repartidores ALTER COLUMN aprobado SET DEFAULT FALSE"))
+        db.session.commit()
         print("✅ Tablas creadas correctamente")
     except Exception as e:
         print(f"❌ Error: {e}")

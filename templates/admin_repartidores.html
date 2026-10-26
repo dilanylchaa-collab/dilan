@@ -31,8 +31,8 @@
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
         <h2>Repartidores</h2>
         <div style="display:flex; gap:8px;">
-            <span class="estado-badge entregado">En línea: {{ repartidores|selectattr('disponible')|list|length }}</span>
-            <span class="estado-badge cancelado">Fuera: {{ repartidores|rejectattr('disponible')|list|length }}</span>
+            <span class="estado-badge entregado">En línea: {{ repartidores|selectattr('aprobado')|selectattr('disponible')|list|length }}</span>
+            <span class="estado-badge cancelado">Fuera: {{ repartidores|selectattr('aprobado')|rejectattr('disponible')|list|length }}</span>
         </div>
     </div>
 
@@ -55,10 +55,40 @@
         </div>
     </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div style="padding:10px 14px; border-radius:8px; margin-bottom:1rem; font-size:14px; background:{{ '#dcfce7' if cat=='success' else '#fef3c7' if cat=='warning' else '#fee2e2' }};">{{ msg }}</div>
+    {% endfor %}
+    {% endwith %}
+
+    {% set pendientes = repartidores|rejectattr('aprobado')|list %}
+    {% if pendientes %}
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1.2rem 1.5rem; margin-bottom:1.5rem;">
+        <h3 style="font-size:15px; margin-bottom:0.5rem;">⏳ Solicitudes pendientes ({{ pendientes|length }})</h3>
+        {% for r in pendientes %}
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#fff; border:1px solid #eee; border-radius:8px; padding:10px 14px; margin-top:8px;">
+            <div style="flex:1; min-width:180px;">
+                <div style="font-weight:600; font-size:14px;">{{ r.nombre }}</div>
+                <div style="font-size:12px; color:#666;">{{ r.email }} · {{ r.telefono or 'Sin teléfono' }}</div>
+                {% if r.created_at %}
+                <div style="font-size:11px; color:#999;">Registrado: {{ r.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                {% endif %}
+            </div>
+            <form method="POST" action="/admin/repartidores/aprobar/{{ r.id }}">
+                <button type="submit" style="background:#16a34a; color:#fff; border:none; border-radius:8px; padding:8px 14px; cursor:pointer;">✅ Aprobar</button>
+            </form>
+            <form method="POST" action="/admin/repartidores/rechazar/{{ r.id }}" onsubmit="return confirm('¿Rechazar y eliminar esta solicitud?');">
+                <button type="submit" style="background:#ef4444; color:#fff; border:none; border-radius:8px; padding:8px 14px; cursor:pointer;">❌ Rechazar</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- LISTA REPARTIDORES -->
     {% if repartidores %}
     <div class="admin-grid">
-        {% for r in repartidores %}
+        {% for r in repartidores if r.aprobado %}
         <div style="background:#fff; border-radius:12px; border:1px solid #eee; padding:1.2rem; border-left:4px solid {{ '#10b981' if r.disponible else '#ef4444' }};">
 
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:0.8rem;">

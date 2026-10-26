@@ -376,7 +376,7 @@ def repartidor_registro():
         )
         db.session.add(repartidor)
         db.session.commit()
-        flash('Cuenta creada correctamente', 'success')
+        flash('Solicitud enviada. Podrás ingresar cuando el administrador te apruebe.', 'warning')
         return redirect(url_for('main.repartidor_login'))
 
     return render_template('repartidor_registro.html')
@@ -389,6 +389,9 @@ def repartidor_login():
         rep      = Repartidor.query.filter_by(email=email).first()
 
         if rep and check_password_hash(rep.password, password):
+            if not rep.aprobado:
+                flash('Tu cuenta está pendiente de aprobación del administrador', 'warning')
+                return redirect(url_for('main.repartidor_login'))
             session['repartidor_id'] = rep.id
             return redirect(url_for('main.repartidor_panel'))
         else:
@@ -468,7 +471,7 @@ def repartidor_responder(asignacion_id):
         db.session.commit()
 
         # Buscar siguiente repartidor disponible
-        repartidores = Repartidor.query.filter_by(disponible=True).filter(
+        repartidores = Repartidor.query.filter_by(disponible=True, aprobado=True).filter(
             Repartidor.id != asignacion.repartidor_id
         ).all()
 
@@ -568,6 +571,27 @@ def cliente_login():
 def cliente_logout():
     session.pop('cliente_id', None)
     return redirect(url_for('main.index'))
+@main.route('/admin/repartidores/aprobar/<int:id>', methods=['POST'])
+@login_required
+def aprobar_repartidor(id):
+    rep = Repartidor.query.get_or_404(id)
+    rep.aprobado = True
+    db.session.commit()
+    flash(f'{rep.nombre} fue aprobado como repartidor', 'success')
+    return redirect(url_for('main.admin_repartidores'))
+
+@main.route('/admin/repartidores/rechazar/<int:id>', methods=['POST'])
+@login_required
+def rechazar_repartidor(id):
+    rep = Repartidor.query.get_or_404(id)
+    if rep.aprobado:
+        flash('No se puede rechazar un repartidor ya aprobado', 'danger')
+    else:
+        db.session.delete(rep)
+        db.session.commit()
+        flash('Solicitud rechazada', 'warning')
+    return redirect(url_for('main.admin_repartidores'))
+
 @main.route('/repartidor/verificar-pedidos')
 def repartidor_verificar_pedidos():
     if 'repartidor_id' not in session:

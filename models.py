@@ -74,9 +74,11 @@ class Repartidor(db.Model):
     telefono   = db.Column(db.String(20))
     email      = db.Column(db.String(100), unique=True, nullable=False)
     password   = db.Column(db.String(200), nullable=False)
-    disponible = db.Column(db.Boolean, default=True)
+    disponible = db.Column(db.Boolean, default=True) 
+    aprobado   = db.Column(db.Boolean, default=False)
     latitud    = db.Column(db.Float)
     longitud   = db.Column(db.Float)
+    aprobado   = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
