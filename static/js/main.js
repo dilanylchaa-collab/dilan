@@ -49,6 +49,8 @@ function renderCarrito() {
         if (vacio) vacio.style.display = 'block';
         if (resumen) resumen.innerHTML = '';
         if (totalEl) totalEl.textContent = 'Bs. 0.00';
+        const le = document.getElementById('linea-envio');
+        if (le) le.style.display = 'none';
         return;
     }
 
@@ -82,7 +84,10 @@ function renderCarrito() {
         `).join('');
     }
 
-    if (totalEl) totalEl.textContent = `Bs. ${total.toFixed(2)}`;
+    const lineaEnvio = document.getElementById('linea-envio');
+    const envio = lineaEnvio ? parseFloat(lineaEnvio.dataset.costo) : 0;
+    if (lineaEnvio) lineaEnvio.style.display = 'flex';
+    if (totalEl) totalEl.textContent = `Bs. ${(total + envio).toFixed(2)}`;
 }
 
 function cambiarCantidad(id, delta) {

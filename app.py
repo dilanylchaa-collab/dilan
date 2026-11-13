@@ -32,6 +32,8 @@ with app.app_context():
         db.create_all()
         db.session.execute(text("ALTER TABLE repartidores ADD COLUMN IF NOT EXISTS aprobado BOOLEAN DEFAULT TRUE"))
         db.session.execute(text("ALTER TABLE repartidores ALTER COLUMN aprobado SET DEFAULT FALSE"))
+        db.session.execute(text("ALTER TABLE repartidores ADD COLUMN IF NOT EXISTS numero_moto VARCHAR(20)"))
+        db.session.execute(text("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS costo_envio NUMERIC(10,2) DEFAULT 0"))
         db.session.commit()
         print("✅ Tablas creadas correctamente")
     except Exception as e:

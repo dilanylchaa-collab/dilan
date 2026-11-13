@@ -35,6 +35,7 @@ class Pedido(db.Model):
     created_at      = db.Column(db.DateTime, default=datetime.utcnow)
     items           = db.relationship('DetallePedido', backref='pedido', lazy=True)
     repartidor      = db.relationship('Repartidor', backref='pedidos')
+    costo_envio     = db.Column(db.Numeric(10, 2), default=0)
 
 class DetallePedido(db.Model):
     __tablename__ = 'detalle_pedidos'
@@ -76,6 +77,7 @@ class Repartidor(db.Model):
     password   = db.Column(db.String(200), nullable=False)
     disponible = db.Column(db.Boolean, default=True) 
     aprobado   = db.Column(db.Boolean, default=False)
+    numero_moto = db.Column(db.String(20))
     latitud    = db.Column(db.Float)
     longitud   = db.Column(db.Float)
     aprobado   = db.Column(db.Boolean, default=False)

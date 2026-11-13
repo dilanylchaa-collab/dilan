@@ -7,6 +7,9 @@ from flask_mail import Message
 import cloudinary
 import cloudinary.uploader
 
+import os
+COSTO_DELIVERY = float(os.environ.get('COSTO_DELIVERY', 8))
+
 main = Blueprint('main', __name__)
 
 @main.route('/')
@@ -21,7 +24,7 @@ def menu():
 
 @main.route('/carrito')
 def carrito():
-    return render_template('carrito.html')
+    return render_template('carrito.html', costo_envio=COSTO_DELIVERY)
 
 @main.route('/pedido', methods=['POST'])
 def crear_pedido():
@@ -31,7 +34,8 @@ def crear_pedido():
             cliente_nombre   = data['nombre'],
             cliente_telefono = data['telefono'],
             direccion        = data['direccion'],
-            total            = data['total'],
+            total            = round(float(data['total']) + COSTO_DELIVERY, 2),
+            costo_envio      = COSTO_DELIVERY,
             estado           = 'pendiente',
             cliente_id       = session.get('cliente_id')
         )
@@ -577,6 +581,7 @@ def cliente_logout():
 def aprobar_repartidor(id):
     rep = Repartidor.query.get_or_404(id)
     rep.aprobado = True
+    rep.numero_moto = request.form.get('numero_moto', '').strip()
     db.session.commit()
     flash(f'{rep.nombre} fue aprobado como repartidor', 'success')
     return redirect(url_for('main.admin_repartidores'))
@@ -591,6 +596,15 @@ def rechazar_repartidor(id):
         db.session.delete(rep)
         db.session.commit()
         flash('Solicitud rechazada', 'warning')
+    return redirect(url_for('main.admin_repartidores'))
+
+@main.route('/admin/repartidores/moto/<int:id>', methods=['POST'])
+@login_required
+def asignar_moto(id):
+    rep = Repartidor.query.get_or_404(id)
+    rep.numero_moto = request.form.get('numero_moto', '').strip()
+    db.session.commit()
+    flash(f'Moto {rep.numero_moto} asignada a {rep.nombre}', 'success')
     return redirect(url_for('main.admin_repartidores'))
 
 @main.route('/repartidor/verificar-pedidos')

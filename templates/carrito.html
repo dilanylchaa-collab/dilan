@@ -56,6 +56,10 @@
         <div class="carrito-resumen">
             <h3>Resumen</h3>
             <div class="resumen-detalle" id="resumen-detalle"></div>
+            <div id="linea-envio" class="resumen-linea" data-costo="{{ costo_envio }}" style="display:none;">
+                <span>🛵 Envío (delivery)</span>
+                <span>Bs. {{ '%.2f'|format(costo_envio) }}</span>
+            </div>
             <div class="resumen-total">
                 <span>Total</span>
                 <span id="total-precio">Bs. 0.00</span>
