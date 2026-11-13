@@ -745,6 +745,91 @@ def reiniciar_menu():
 
     return redirect(url_for('main.admin_productos'))
 
+@main.route('/admin/reiniciar-menu')
+@login_required
+def reiniciar_menu():
+    if request.args.get('confirmar') != 'si':
+        return (
+            '<div style="font-family:sans-serif; max-width:520px; margin:3rem auto; line-height:1.6;">'
+            '<h2>Cambiar menú</h2>'
+            '<p>Se eliminan los productos y categorías actuales y se crea el menú nuevo.</p>'
+            '<p><a href="/admin/reiniciar-menu?confirmar=si">Cambiar menú y conservar el historial de pedidos</a></p>'
+            '<p><a href="/admin/reiniciar-menu?confirmar=si&borrar_pedidos=si">Cambiar menú y borrar también TODOS los pedidos</a></p>'
+            '<p><a href="/admin/productos">Cancelar</a></p>'
+            '</div>'
+        )
+
+    if Categoria.query.filter_by(nombre='Pollo').first():
+        flash('El menú nuevo ya está creado', 'warning')
+        return redirect(url_for('main.admin_productos'))
+
+    try:
+        if request.args.get('borrar_pedidos') == 'si':
+            Resena.query.delete()
+            AsignacionPedido.query.delete()
+            DetallePedido.query.delete()
+            Pedido.query.delete()
+            db.session.flush()
+
+        usados = {fila[0] for fila in db.session.query(DetallePedido.producto_id).distinct().all()}
+        for p in Producto.query.all():
+            if p.id in usados:
+                p.disponible = False
+            else:
+                db.session.delete(p)
+        db.session.flush()
+
+        for c in Categoria.query.all():
+            if not Producto.query.filter_by(categoria_id=c.id).first():
+                db.session.delete(c)
+        db.session.flush()
+
+        menu_nuevo = [
+            ('Pollo', '🍗', [
+                ('Pollo a la Broaster', 'Presa de pollo broaster con papas fritas', '🍗'),
+                ('Pollo al Spiedo', 'Pollo al spiedo con arroz y fideo', '🍗'),
+            ]),
+            ('Salchipapas', '🌭', [
+                ('Salchi Pollo', 'Salchicha y pollo con papas fritas', '🌭'),
+                ('Salchipapa', 'Salchicha con papas fritas', '🍟'),
+            ]),
+            ('Platos', '🥩', [
+                ('Lomo', 'Lomo con huevo, arroz y plátano frito', '🥩'),
+                ('Keperi', 'Plato de la casa', '🍖'),
+                ('Charque', 'Plato de charque', '🍖'),
+            ]),
+            ('Hamburguesas', '🍔', [
+                ('Hamburguesa de carne simple', 'Con queso, lechuga y tomate', '🍔'),
+                ('Hamburguesa de carne doble', 'Doble carne con queso, lechuga y tomate', '🍔'),
+                ('Hamburguesa de pollo simple', 'Con lechuga y tomate', '🍔'),
+                ('Hamburguesa de pollo doble', 'Doble pollo con lechuga y tomate', '🍔'),
+            ]),
+        ]
+
+        for nombre_cat, icono, productos in menu_nuevo:
+            cat = Categoria.query.filter_by(nombre=nombre_cat).first()
+            if not cat:
+                cat = Categoria(nombre=nombre_cat, icono=icono)
+                db.session.add(cat)
+                db.session.flush()
+            for nombre, descripcion, emoji in productos:
+                db.session.add(Producto(
+                    nombre       = nombre,
+                    descripcion  = descripcion,
+                    precio       = 0,
+                    imagen_emoji = emoji,
+                    categoria_id = cat.id,
+                    disponible   = False
+                ))
+
+        db.session.commit()
+        flash('Menú nuevo creado. Ahora ponle precio a cada producto y márcalo como disponible.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'No se pudo cambiar el menú: {e}', 'danger')
+
+    return redirect(url_for('main.admin_productos'))
+
 @main.route('/admin/comision', methods=['POST'])
 @login_required
 def guardar_comision():
