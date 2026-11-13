@@ -87,6 +87,12 @@ class Repartidor(db.Model):
         return f'<Repartidor {self.nombre}>'
 
 
+class Configuracion(db.Model):
+    __tablename__ = 'configuracion'
+    clave = db.Column(db.String(50), primary_key=True)
+    valor = db.Column(db.String(100))
+
+
 class AsignacionPedido(db.Model):
     __tablename__ = 'asignaciones_pedido'
     id             = db.Column(db.Integer, primary_key=True)

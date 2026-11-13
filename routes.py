@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session
-from models import db, Categoria, Producto, Pedido, DetallePedido, Usuario, Resena, Repartidor, AsignacionPedido, Cliente
+from models import db, Categoria, Producto, Pedido, DetallePedido, Usuario, Resena, Repartidor, AsignacionPedido, Cliente, Configuracion
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import mail
@@ -11,6 +11,20 @@ import os
 COSTO_DELIVERY = float(os.environ.get('COSTO_DELIVERY', 8))
 
 main = Blueprint('main', __name__)
+
+def get_costo_envio():
+    try:
+        c = db.session.get(Configuracion, 'costo_envio')
+        return float(c.valor) if c else COSTO_DELIVERY
+    except Exception:
+        db.session.rollback()
+        return COSTO_DELIVERY
+
+def moto_en_uso(numero, excluir_id=None):
+    q = Repartidor.query.filter(db.func.lower(Repartidor.numero_moto) == numero.lower())
+    if excluir_id:
+        q = q.filter(Repartidor.id != excluir_id)
+    return q.first() is not None
 
 @main.route('/')
 def index():
@@ -24,18 +38,19 @@ def menu():
 
 @main.route('/carrito')
 def carrito():
-    return render_template('carrito.html', costo_envio=COSTO_DELIVERY)
+    return render_template('carrito.html', costo_envio=get_costo_envio())
 
 @main.route('/pedido', methods=['POST'])
 def crear_pedido():
     data = request.get_json()
     try:
+        costo  = get_costo_envio()
         pedido = Pedido(
             cliente_nombre   = data['nombre'],
             cliente_telefono = data['telefono'],
             direccion        = data['direccion'],
-            total            = round(float(data['total']) + COSTO_DELIVERY, 2),
-            costo_envio      = COSTO_DELIVERY,
+            total            = round(float(data['total']) + costo, 2),
+            costo_envio      = costo,
             estado           = 'pendiente',
             cliente_id       = session.get('cliente_id')
         )
@@ -501,6 +516,8 @@ def admin_repartidores():
     hoy = date.today()
 
     repartidores     = Repartidor.query.all()
+    usados = [int(x.numero_moto) for x in repartidores if x.numero_moto and x.numero_moto.isdigit()]
+    siguiente_moto = (max(usados) + 1) if usados else 1
     asignaciones_hoy = AsignacionPedido.query.filter(
         db.func.date(AsignacionPedido.created_at) == hoy
     ).count()
@@ -516,6 +533,8 @@ def admin_repartidores():
     return render_template('admin_repartidores.html',
         repartidores     = repartidores,
         asignaciones_hoy = asignaciones_hoy,
+        costo_envio      = get_costo_envio(),
+        siguiente_moto   = siguiente_moto,
         aceptados_hoy    = aceptados_hoy,
         rechazados_hoy   = rechazados_hoy
     )
@@ -580,8 +599,12 @@ def cliente_logout():
 @login_required
 def aprobar_repartidor(id):
     rep = Repartidor.query.get_or_404(id)
+    numero = request.form.get('numero_moto', '').strip()
+    if not numero or moto_en_uso(numero, rep.id):
+        flash(f'El número de moto "{numero}" ya está en uso o no es válido', 'danger')
+        return redirect(url_for('main.admin_repartidores'))
     rep.aprobado = True
-    rep.numero_moto = request.form.get('numero_moto', '').strip()
+    rep.numero_moto = numero
     db.session.commit()
     flash(f'{rep.nombre} fue aprobado como repartidor', 'success')
     return redirect(url_for('main.admin_repartidores'))
@@ -602,9 +625,32 @@ def rechazar_repartidor(id):
 @login_required
 def asignar_moto(id):
     rep = Repartidor.query.get_or_404(id)
-    rep.numero_moto = request.form.get('numero_moto', '').strip()
+    numero = request.form.get('numero_moto', '').strip()
+    if not numero or moto_en_uso(numero, rep.id):
+        flash(f'El número de moto "{numero}" ya está en uso o no es válido', 'danger')
+        return redirect(url_for('main.admin_repartidores'))
+    rep.numero_moto = numero
     db.session.commit()
     flash(f'Moto {rep.numero_moto} asignada a {rep.nombre}', 'success')
+    return redirect(url_for('main.admin_repartidores'))
+
+@main.route('/admin/comision', methods=['POST'])
+@login_required
+def guardar_comision():
+    try:
+        valor = round(float(request.form.get('costo_envio', '').replace(',', '.')), 2)
+        if valor < 0:
+            raise ValueError
+    except ValueError:
+        flash('Ingresa un monto válido', 'danger')
+        return redirect(url_for('main.admin_repartidores'))
+    c = db.session.get(Configuracion, 'costo_envio')
+    if c:
+        c.valor = str(valor)
+    else:
+        db.session.add(Configuracion(clave='costo_envio', valor=str(valor)))
+    db.session.commit()
+    flash(f'Costo de envío actualizado a Bs. {valor:.2f}', 'success')
     return redirect(url_for('main.admin_repartidores'))
 
 @main.route('/repartidor/verificar-pedidos')
