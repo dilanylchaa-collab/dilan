@@ -45,7 +45,7 @@
         <button class="cat-btn active" onclick="filtrar('todos', this)">
             <i class="ti ti-flame"></i> Todos
         </button>
-        {% for cat in categorias %}
+        {% for cat in categorias if cat.productos|selectattr('disponible')|list %}
         <button class="cat-btn" onclick="filtrar('{{ cat.id }}', this)">
             {{ cat.icono }} {{ cat.nombre }}
         </button>
