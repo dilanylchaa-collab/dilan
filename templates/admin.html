@@ -171,6 +171,30 @@
                 {% endfor %}
             </div>
 
+            <div class="pedido-item-linea" style="margin-bottom:6px;">
+                <span>🛵 Envío (delivery)</span>
+                <span>Bs. {{ "%.2f"|format(pedido.costo_envio or 0) }}</span>
+            </div>
+            {% if pedido.estado in ['pendiente', 'preparando'] %}
+            <form method="POST" action="/admin/pedido/{{ pedido.id }}/envio" style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin:0.5rem 0;">
+                <input type="hidden" name="fecha" value="{{ fecha_sel }}">
+                <span style="font-size:12px; color:#666;">Cambiar envío: Bs.</span>
+                <input type="number" name="costo_envio" step="0.01" min="0" value="{{ '%.2f'|format(pedido.costo_envio or 0) }}" required style="width:80px; padding:5px 8px; border:1px solid #ddd; border-radius:6px; font-size:12px;">
+                <button type="submit" style="background:#f97316; color:#fff; border:none; border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer;">Guardar</button>
+            </form>
+            {% endif %}
+            <div class="pedido-item-linea" style="margin-bottom:6px;">
+                <span>🛵 Envío (delivery)</span>
+                <span>Bs. {{ "%.2f"|format(pedido.costo_envio or 0) }}</span>
+            </div>
+            {% if pedido.estado in ['pendiente', 'preparando'] %}
+            <form method="POST" action="/admin/pedido/{{ pedido.id }}/envio" style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin:0.5rem 0;">
+                <input type="hidden" name="fecha" value="{{ fecha_sel }}">
+                <span style="font-size:12px; color:#666;">Cambiar envío: Bs.</span>
+                <input type="number" name="costo_envio" step="0.01" min="0" value="{{ '%.2f'|format(pedido.costo_envio or 0) }}" required style="width:80px; padding:5px 8px; border:1px solid #ddd; border-radius:6px; font-size:12px;">
+                <button type="submit" style="background:#f97316; color:#fff; border:none; border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer;">Guardar</button>
+            </form>
+            {% endif %}
             <div class="pedido-total">
                 <span>Total</span>
                 <span>Bs. {{ pedido.total }}</span>

@@ -660,6 +660,32 @@ def editar_envio(id):
     flash(f'Envío del pedido #{pedido.id} actualizado a Bs. {nuevo:.2f}', 'success')
     return redirect(destino)
 
+@main.route('/admin/pedido/<int:id>/envio', methods=['POST'])
+@login_required
+def editar_envio(id):
+    pedido = Pedido.query.get_or_404(id)
+    fecha = request.form.get('fecha')
+    destino = url_for('main.admin', fecha=fecha) if fecha else url_for('main.admin')
+
+    if pedido.estado not in ['pendiente', 'preparando']:
+        flash('Solo se puede cambiar el envío mientras el pedido está pendiente o preparando', 'danger')
+        return redirect(destino)
+
+    try:
+        nuevo = round(float(request.form.get('costo_envio', '').replace(',', '.')), 2)
+        if nuevo < 0:
+            raise ValueError
+    except ValueError:
+        flash('Ingresa un monto válido', 'danger')
+        return redirect(destino)
+
+    subtotal = sum(float(i.precio_unit) * i.cantidad for i in pedido.items)
+    pedido.costo_envio = nuevo
+    pedido.total = round(subtotal + nuevo, 2)
+    db.session.commit()
+    flash(f'Envío del pedido #{pedido.id} actualizado a Bs. {nuevo:.2f}', 'success')
+    return redirect(destino)
+
 @main.route('/admin/comision', methods=['POST'])
 @login_required
 def guardar_comision():
