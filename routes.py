@@ -745,6 +745,112 @@ def reiniciar_menu():
 
     return redirect(url_for('main.admin_productos'))
 
+@main.route('/admin/categorias')
+@login_required
+def admin_categorias():
+    categorias = Categoria.query.order_by(Categoria.id).all()
+    return render_template('admin_categorias.html', categorias=categorias)
+
+@main.route('/admin/categorias/agregar', methods=['POST'])
+@login_required
+def agregar_categoria():
+    nombre = request.form.get('nombre', '').strip()
+    icono  = request.form.get('icono', '').strip()[:10]
+    if not nombre:
+        flash('Escribe el nombre de la categoría', 'danger')
+    elif Categoria.query.filter(db.func.lower(Categoria.nombre) == nombre.lower()).first():
+        flash(f'Ya existe la categoría "{nombre}"', 'danger')
+    else:
+        db.session.add(Categoria(nombre=nombre, icono=icono or '🍽️'))
+        db.session.commit()
+        flash(f'Categoría "{nombre}" agregada', 'success')
+    return redirect(url_for('main.admin_categorias'))
+
+@main.route('/admin/categorias/editar/<int:id>', methods=['POST'])
+@login_required
+def editar_categoria(id):
+    cat    = Categoria.query.get_or_404(id)
+    nombre = request.form.get('nombre', '').strip()
+    icono  = request.form.get('icono', '').strip()[:10]
+    if not nombre:
+        flash('El nombre no puede estar vacío', 'danger')
+    elif Categoria.query.filter(db.func.lower(Categoria.nombre) == nombre.lower(), Categoria.id != id).first():
+        flash(f'Ya existe otra categoría llamada "{nombre}"', 'danger')
+    else:
+        cat.nombre = nombre
+        if icono:
+            cat.icono = icono
+        db.session.commit()
+        flash('Categoría actualizada', 'success')
+    return redirect(url_for('main.admin_categorias'))
+
+@main.route('/admin/categorias/eliminar/<int:id>', methods=['POST'])
+@login_required
+def eliminar_categoria(id):
+    cat = Categoria.query.get_or_404(id)
+    if Producto.query.filter_by(categoria_id=id).first():
+        flash('No se puede eliminar: la categoría tiene productos. Elimina o cambia esos productos primero.', 'danger')
+    else:
+        db.session.delete(cat)
+        db.session.commit()
+        flash('Categoría eliminada', 'success')
+    return redirect(url_for('main.admin_categorias'))
+
+@main.route('/admin/agregar-menu')
+@login_required
+def agregar_menu():
+    menu_foto = [
+        ('Pollo', '🍗', [
+            ('Pollo a la Broaster', 'Presa de pollo broaster con papas fritas', '🍗'),
+            ('Pollo al Spiedo', 'Pollo al spiedo con arroz y fideo', '🍗'),
+        ]),
+        ('Salchipapas', '🌭', [
+            ('Salchi Pollo', 'Salchicha y pollo con papas fritas', '🌭'),
+            ('Salchipapa', 'Salchicha con papas fritas', '🍟'),
+        ]),
+        ('Platos', '🥩', [
+            ('Lomo', 'Lomo con huevo, arroz y plátano frito', '🥩'),
+            ('Keperi', 'Plato de la casa', '🍖'),
+            ('Charque', 'Plato de charque', '🍖'),
+        ]),
+        ('Hamburguesas', '🍔', [
+            ('Hamburguesa de carne simple', 'Con queso, lechuga y tomate', '🍔'),
+            ('Hamburguesa de carne doble', 'Doble carne con queso, lechuga y tomate', '🍔'),
+            ('Hamburguesa de pollo simple', 'Con lechuga y tomate', '🍔'),
+            ('Hamburguesa de pollo doble', 'Doble pollo con lechuga y tomate', '🍔'),
+        ]),
+    ]
+    nuevas_cat  = 0
+    nuevos_prod = 0
+    try:
+        for nombre_cat, icono, productos in menu_foto:
+            cat = Categoria.query.filter_by(nombre=nombre_cat).first()
+            if not cat:
+                cat = Categoria(nombre=nombre_cat, icono=icono)
+                db.session.add(cat)
+                db.session.flush()
+                nuevas_cat += 1
+            for nombre, descripcion, emoji in productos:
+                if not Producto.query.filter_by(nombre=nombre, categoria_id=cat.id).first():
+                    db.session.add(Producto(
+                        nombre       = nombre,
+                        descripcion  = descripcion,
+                        precio       = 0,
+                        imagen_emoji = emoji,
+                        categoria_id = cat.id,
+                        disponible   = False
+                    ))
+                    nuevos_prod += 1
+        db.session.commit()
+        if nuevas_cat or nuevos_prod:
+            flash(f'Se agregaron {nuevas_cat} categorías y {nuevos_prod} productos. Ponles precio y márcalos como disponibles para que salgan en el menú.', 'success')
+        else:
+            flash('El menú de la foto ya estaba cargado', 'warning')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'No se pudo agregar el menú: {e}', 'danger')
+    return redirect(url_for('main.admin_categorias'))
+
 @main.route('/admin/comision', methods=['POST'])
 @login_required
 def guardar_comision():

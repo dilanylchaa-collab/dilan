@@ -41,13 +41,16 @@
         <h2>Nuestro Menú</h2>
     </div>
 
+    {# Solo se muestran las categorías que tienen al menos un producto disponible #}
+    {% set cats_activas = productos|map(attribute='categoria_id')|unique|list %}
+
     <div class="categories">
         <button class="cat-btn active" onclick="filtrar('todos', this)">
             <i class="ti ti-flame"></i> Todos
         </button>
-        {% for cat in categorias if cat.productos|selectattr('disponible')|list %}
+        {% for cat in categorias if cat.id in cats_activas %}
         <button class="cat-btn" onclick="filtrar('{{ cat.id }}', this)">
-            {{ cat.icono }} {{ cat.nombre }}
+            {{ cat.icono or '' }} {{ cat.nombre }}
         </button>
         {% endfor %}
     </div>
@@ -58,22 +61,27 @@
             {% if p.imagen_url %}
             <div style="width:100%; height:160px; overflow:hidden;">
                 <img src="{{ (p.imagen_url if p.imagen_url.startswith('http') else url_for('static', filename=p.imagen_url)) }}"
+                    alt="{{ p.nombre }}" loading="lazy"
                     style="width:100%; height:100%; object-fit:cover; display:block;">
             </div>
             {% else %}
-            <div class="card-img">{{ p.imagen_emoji }}</div>
+            <div class="card-img">{{ p.imagen_emoji or '🍽️' }}</div>
             {% endif %}
             <div class="card-body">
                 <div class="card-name">{{ p.nombre }}</div>
-                <div class="card-desc">{{ p.descripcion }}</div>
+                <div class="card-desc">{{ p.descripcion or '' }}</div>
                 <div class="card-footer">
                     <span class="card-price">Bs. {{ p.precio }}</span>
-                    <button class="add-btn" onclick="agregarAlCarrito({{ p.id }}, '{{ p.nombre }}', {{ p.precio }}, this)">
+                    <button class="add-btn" onclick='agregarAlCarrito({{ p.id }}, {{ p.nombre|tojson }}, {{ p.precio }}, this)'>
                         <i class="ti ti-plus"></i> Agregar
                     </button>
                 </div>
             </div>
         </div>
+        {% else %}
+        <p style="grid-column:1 / -1; text-align:center; color:#999; padding:2rem 0;">
+            Pronto agregaremos platos al menú.
+        </p>
         {% endfor %}
     </div>
 
